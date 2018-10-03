@@ -1,0 +1,4 @@
+# These files are text and should be normalized (Convert crlf => lf)
+*.cpp text
+*.h text
+t? text
