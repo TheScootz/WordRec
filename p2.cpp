@@ -24,7 +24,7 @@
 #include "WordRec.h"
 
 // Maximum number of tokens to store
-#define MAX_WORDS 5
+#define MAX_WORDS 100
 
 using namespace std;
 
@@ -32,10 +32,11 @@ using namespace std;
 /********** PROTOTYPES **********/
 
 void findDuplicates(ifstream &wordFile, WordRec words[], int numElements);
+int findLongestWord(WordRec words[], int numElements);
 char menuPrompt();
 bool openFile(ifstream &filestream);
-void outputResults(WordRec words[], int numElements);
-bool processChoice(char choice);
+void printAllWords(WordRec words[], int numElements);
+bool processChoice(char choice, WordRec words[], int numElements);
 void readSort(ifstream &wordFile, WordRec words[], int &numElements);
 void removeDuplicate(WordRec words[], int &spot, int &indexMin, int &numElements);
 int searchWords(WordRec words[], int numElements, string key);
@@ -65,7 +66,7 @@ int main() {
         findDuplicates(wordFile, words, numElements);
     
     // prompt for and print desired output until user chooses to quit
-    while (processChoice(menuPrompt()));
+    while (processChoice(menuPrompt(), words, numElements));
     
     return 0;
 }
@@ -94,6 +95,23 @@ void findDuplicates(ifstream &wordFile, WordRec words[], int numElements) {
         //cout << "; location = " << location << endl;
         if (location != -1) words[location]++;
     }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Function name:  findLongestWord
+//  Description:    find the length of the longest word in WordRec array
+//  Parameters:     WordRec words[]: array of WordRec objects - input
+//                  int numElements: number of array elements - input
+//  Return Value:   int - length of the longest token in the array
+//
+////////////////////////////////////////////////////////////////////////////////
+int findLongestWord(WordRec words[], int numElements) {
+    int length = 0;
+    for (int i = 0; i < numElements; i++)
+        if (length < words[i].getWord().length())
+            length = words[i].getWord().length();
+    return length;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -140,6 +158,37 @@ bool openFile(ifstream &filestream) {
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  Function name:  printAllWords
+//  Description:    display all the recorded words and how many times they
+//                  appeared
+//  Parameters:     WordRec words[]: array of WordRec objects - input
+//                  int numElements: number of array elements - input
+//  Return Value:   none
+//
+////////////////////////////////////////////////////////////////////////////////
+void printAllWords(WordRec words[], int numElements) {
+    // are there words?
+    if (numElements == 0) {
+        cout << "No words were found in the file." << endl;
+        return;
+    }
+    
+    // dynamically determine width of the word header
+    int width = max(findLongestWord(words, numElements)+1, 5);
+    
+    // print header
+    cout << endl << setw(width+1) << left << "Word" << "Count" << endl;
+    for (int i = 0; i < width; i++)
+        cout << '-';
+    cout << " -----" << endl;
+    
+    for (int i = 0; i < numElements; i++)
+        cout << setw(width) << left << words[i] << endl;
+    cout << endl;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  Function name:  processChoice
 //  Description:    processes user's menu choice from menuPrompt()
 //                  relevant functions:
@@ -148,13 +197,15 @@ bool openFile(ifstream &filestream) {
 //                  S)how:   printFirstChars()
 //                  F)ind:   findWord()
 //  Parameters:     char choice - user's choice of output
+//                  WordRec words[]: array of WordRec objects - input
+//                  int numElements: number of array elements - input
 //  Return Value:   bool - false when the user chooses to quit
 //
 ////////////////////////////////////////////////////////////////////////////////
-bool processChoice(char choice) {
+bool processChoice(char choice, WordRec words[], int numElements) {
     switch (choice) {
         case 'A':
-            cout << "A)ll words with number of appearances" << endl;
+            printAllWords(words, numElements);
             break;
         case 'P':
             cout << "P)rint words with specific count" << endl;
@@ -169,7 +220,7 @@ bool processChoice(char choice) {
             return false;
         default: // prompt again
             cout << "Invalid option chosen." << endl;
-            return processChoice(menuPrompt());
+            return processChoice(menuPrompt(), words, numElements);
     }
     
     return true;
@@ -264,7 +315,7 @@ int searchWords(WordRec words[], int numElements, string key) {
 //  Description:    uses selection sort to sort an array of WordRec objects in
 //                  lexographical order, and calls removeDuplicates() for any
 //                  duplicate words encountered
-//  Parameters:     WordRec words[]: array containing WordRec objects to sort
+//  Parameters:     WordRec words[]: array of WordRec objects to sort
 //                      - input/output
 //                  int &numElements: number of array elements - input/output
 //  Return Value:   none
@@ -309,30 +360,4 @@ void swap(WordRec &a, WordRec &b) {
     WordRec temp = a;
     a = b;
     b = temp;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  Function name:  outputResults
-//  Description:    display all the recorded words and how many times they
-//                  appeared
-//  Parameters:     WordRec words[]: array containing WordRec objects
-//                      storing the data - input
-//                  int numElements: number of array elements - input
-//  Return Value:   none
-//
-////////////////////////////////////////////////////////////////////////////////
-void outputResults(WordRec words[], int numElements) {
-    // are there words?
-    if (numElements == 0) {
-        cout << "No words were found in the file." << endl;
-        return;
-    }
-    
-    // print header
-    cout << setw(11) << left << "Word" << right << "Count" << endl;
-    cout << "---------- -----" << endl;
-    
-    for (int i = 0; i < numElements; i++)
-        cout << words[i] << endl;
 }

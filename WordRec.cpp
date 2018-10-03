@@ -64,7 +64,7 @@ void WordRec::setCount(int input) {
 
 // Inspector: insertion operator outputs both the word and count
 ostream &operator<<(ostream &out, const WordRec &right) {
-    cout << setw(10) << left << right.getWord() << " " << right.getCount();
+    out << right.getWord() << ' ' << right.getCount();
     return out;
 }
 
