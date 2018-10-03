@@ -32,14 +32,15 @@ using namespace std;
 /********** PROTOTYPES **********/
 
 void findDuplicates(ifstream &wordFile, WordRec words[], int numElements);
+char menuPrompt();
 bool openFile(ifstream &filestream);
 void outputResults(WordRec words[], int numElements);
+bool processChoice(char choice);
 void readSort(ifstream &wordFile, WordRec words[], int &numElements);
 void removeDuplicate(WordRec words[], int &spot, int &indexMin, int &numElements);
 int searchWords(WordRec words[], int numElements, string key);
 void sortWords(WordRec words[], int &numElements);
 void swap(WordRec&, WordRec&);
-//char menuPrompt();
 
 
 
@@ -62,7 +63,9 @@ int main() {
     // if there is more to read, only process duplicates of existing members
     if (numElements == MAX_WORDS && !wordFile.fail())
         findDuplicates(wordFile, words, numElements);
-    outputResults(words, numElements);
+    
+    // prompt for and print desired output until user chooses to quit
+    while (processChoice(menuPrompt()));
     
     return 0;
 }
@@ -71,6 +74,17 @@ int main() {
 
 /********** FUNCTION DEFINITIONS **********/
 
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Function name:  findDuplicates
+//  Description:    reads remainder of the word file and increases WordRec
+//                  counts for any duplicates found
+//  Parameters:     ifstream &wordFile: the filestream to read - input/output
+//                  WordRec words[]: array of WordRec objects - input/output
+//                  int numElements: number of array elements - input
+//  Return Value:   none
+//
+////////////////////////////////////////////////////////////////////////////////
 void findDuplicates(ifstream &wordFile, WordRec words[], int numElements) {
     int location;
     string next;
@@ -84,10 +98,32 @@ void findDuplicates(ifstream &wordFile, WordRec words[], int numElements) {
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  Function name:  menuPrompt
+//  Description:    prompts user for one of five options for use with
+//                  processChoice()
+//  Parameters:     none
+//  Return Value:   char - option chosen (uppercase)
+//
+////////////////////////////////////////////////////////////////////////////////
+char menuPrompt() {
+    char choice;
+    
+    cout << "Please choose an option:" << endl
+         << "A)ll words with number of appearances" << endl
+         << "P)rint words with specific count" << endl
+         << "S)how first n chars of all words" << endl
+         << "F)ind a word" << endl
+         << "Q)uit" << endl << "> ";
+    
+    cin >> choice;
+    return toupper(choice);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  Function name:  openFile
-//  Description:    Ask the user for the name of the file containing words
-//                  to count and open it for reading
-//  Parameters:     ifstream &filestream: the filestream to use - output
+//  Description:    prompts user for desired file and opens it for reading
+//  Parameters:     ifstream &filestream: the input stream to use - output
 //  Return Value:   bool - true if the file was successfully opened
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -102,6 +138,55 @@ bool openFile(ifstream &filestream) {
     return filestream.is_open();
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Function name:  processChoice
+//  Description:    processes user's menu choice from menuPrompt()
+//                  relevant functions:
+//                  A)ll:    printAllWords()
+//                  P)rint:  printWordsWithCount()
+//                  S)how:   printFirstChars()
+//                  F)ind:   findWord()
+//  Parameters:     char choice - user's choice of output
+//  Return Value:   bool - false when the user chooses to quit
+//
+////////////////////////////////////////////////////////////////////////////////
+bool processChoice(char choice) {
+    switch (choice) {
+        case 'A':
+            cout << "A)ll words with number of appearances" << endl;
+            break;
+        case 'P':
+            cout << "P)rint words with specific count" << endl;
+            break;
+        case 'S':
+            cout << "S)how first n chars of all words" << endl;
+            break;
+        case 'F':
+            cout << "F)ind a word" << endl;
+            break;
+        case 'Q':
+            return false;
+        default: // prompt again
+            cout << "Invalid option chosen." << endl;
+            return processChoice(menuPrompt());
+    }
+    
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Function name:  readSort
+//  Description:    reads the file and fills a WordRec in the array for each
+//                  word encountered, then calls sortWords(). repeats this
+//                  process until EOF or the array is full of unique elements
+//  Parameters:     ifstream &wordFile: the filestream to read - input/output
+//                  WordRec words[]: array of empty WordRec objects - output
+//                  int &numElements: number of array elements - output
+//  Return Value:   none
+//
+////////////////////////////////////////////////////////////////////////////////
 void readSort(ifstream &wordFile, WordRec words[], int &numElements) {
     string next; // next word read from the file
     
@@ -117,21 +202,33 @@ void readSort(ifstream &wordFile, WordRec words[], int &numElements) {
         }
         
         sortWords(words, numElements);
-        cout << "Sort returned numElements = " << numElements << endl;
+        //cout << "Sort returned numElements = " << numElements << endl;
     }
     // need another sort
     sortWords(words, numElements);
-    cout << "FINAL Sort returned numElements = " << numElements << endl;
+    //cout << "FINAL Sort returned numElements = " << numElements << endl;
 }
 
-void removeDuplicate(WordRec words[], int &spot, int &indexMin, int &numElements) {
-    // if positive, remove from the array by swapping to the end and decreasing
-    // numElements. increment count for existing word
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Function name:  removeDuplicate
+//  Description:    for use with sortWords(): removes encountered duplicate
+//                  from the array by swapping with the last element and
+//                  decreasing numElements; increments count for existing word
+//  Parameters:     WordRec words[]: array of WordRec objects - input/output
+//                  int &spot: index of first unsorted element
+//                  int &indexMin: index of minimum unsorted word
+//                  int &numElements: number of array elements - output
+//  Return Value:   none
+//
+////////////////////////////////////////////////////////////////////////////////
+void removeDuplicate(WordRec words[],int &spot,int &indexMin,int &numElements) {
+    // if positive, remove 
     //cout << "Duplicate: " << words[indexMin].getWord() << " " << words[spot-1].getWord() << endl;
     swap(words[indexMin], words[numElements-1]);
     words[spot-1]++;
     numElements--;
-    spot--; // don't move unsorted index when finding dupe
+    spot--; // offset increment done by for loop
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -140,8 +237,8 @@ void removeDuplicate(WordRec words[], int &spot, int &indexMin, int &numElements
 //  Description:    uses binary search on a WordRec array to find the object
 //                  with the matching word
 //  Parameters:     WordRec words[]: UNIQUE SORTED array containing WordRec 
-//                  objects to sort - input
-//                  int numElements: number of elements in the array - input
+//                  objects to search - input
+//                  int numElements: number of array elements - input
 //                  string key: token to be searched for - input
 //  Return Value:   int - index of matching WordRec object or -1 if not found
 //
@@ -165,27 +262,26 @@ int searchWords(WordRec words[], int numElements, string key) {
 //
 //  Function name:  sortWords
 //  Description:    uses selection sort to sort an array of WordRec objects in
-//                  lexographical order. when encountering duplicates, removes
-//                  them from the array and increases the WordRec's count
-//                  accordingly. numElements will be decremented for each dupe
+//                  lexographical order, and calls removeDuplicates() for any
+//                  duplicate words encountered
 //  Parameters:     WordRec words[]: array containing WordRec objects to sort
-//                      - input
-//                  int numElements: number of elements in the array - input
+//                      - input/output
+//                  int &numElements: number of array elements - input/output
 //  Return Value:   none
 //
 ////////////////////////////////////////////////////////////////////////////////
 void sortWords(WordRec words[], int &numElements) {
-    int indexMin; // index of minimum word
+    int indexMin; // index of minimum unsorted word
     int spot;     // index of first unsorted element
     
     for (spot = 0; spot < numElements; spot++) {
-        cout << "----- spot = " << spot << " -----" << endl;
+        //cout << "----- spot = " << spot << " -----" << endl;
         indexMin = spot;
         // nb: spot+1 because we don't need to compare the word with itself
         // we do however need to check the last element for duplicate
         for (int i = spot+1; i < numElements; i++)
             if (words[i] < words[indexMin]) indexMin = i;
-        cout << "indexMin = " << indexMin << endl;
+        //cout << "indexMin = " << indexMin << endl;
         
         // duplicate check
         // nb: first condition ensures the first word is not checked
@@ -195,25 +291,9 @@ void sortWords(WordRec words[], int &numElements) {
         }
         else if (indexMin != spot)
             swap(words[spot], words[indexMin]);
-        cout << "numElements = " << numElements << endl;
+        //cout << "numElements = " << numElements << endl;
     }
 }
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  Function name:  menuPrompt
-//  Description:    prompts the user for one of five options (functions called):
-//                  A)ll words with number of appearances     listAllWords()
-//                  P)rint words with specific count          listWordsByCount()
-//                  S)how first n chars of all words          listFirstChars()
-//                  F)ind a word                              searchWords()
-//                  Q)uit                                     N/A
-//  Parameters:     WordRec words[]: array containing WordRec objects to sort
-//                      - input
-//                  int numElements: number of elements in the array - input
-//  Return Value:   none
-//
-////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -238,7 +318,7 @@ void swap(WordRec &a, WordRec &b) {
 //                  appeared
 //  Parameters:     WordRec words[]: array containing WordRec objects
 //                      storing the data - input
-//                  int numElements: number of elements in the array - input
+//                  int numElements: number of array elements - input
 //  Return Value:   none
 //
 ////////////////////////////////////////////////////////////////////////////////
