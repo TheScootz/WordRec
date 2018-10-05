@@ -16,8 +16,8 @@ WordRec::WordRec(string input, int times) {
 }
 
 // Mutator: set word
-void WordRec::setWord(string input) {
-    word = input;
+void WordRec::setWord(string token) {
+    word = token;
 }
 
 // Inspector: get word
@@ -58,8 +58,8 @@ bool WordRec::operator==(string &right) {
 }
 
 // Mutator: set count
-void WordRec::setCount(int input) {
-    count = input;
+void WordRec::setCount(int value) {
+    count = value;
 }
 
 // Inspector: insertion operator outputs both the word and count

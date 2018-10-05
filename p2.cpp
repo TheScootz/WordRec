@@ -27,11 +27,13 @@
 // Maximum number of tokens to store
 #define MAX_WORDS 100
 // Letters specifying menu options
-#define OPT_ALLWORDS A // print all words
-#define OPT_COUNT P // print words with specific count
-#define OPT_FIRST S // print first chars of all words
-#define OPT_FIND F // search for a word
-#define OPT_QUIT Q // exit the program
+#define OPT_ALLWORDS 'A' // print all words
+#define OPT_COUNT 'P' // print words with specific count
+#define OPT_FIRST 'S' // print first chars of all words
+#define OPT_FIND 'F' // search for a word
+#define OPT_QUIT 'Q' // exit the program
+// Minimum width when printing words
+#define MIN_WIDTH 5
 
 using namespace std;
 
@@ -40,11 +42,12 @@ using namespace std;
 
 void findDuplicates(ifstream &wordFile, WordRec words[], int numElements);
 int findLongestWord(WordRec words[], int numElements);
+int getPositiveInput(string prompt);
 char menuPrompt();
 bool openFile(ifstream &filestream);
 void printAllWords(WordRec words[], int numElements);
 void printFirstChars(WordRec words[], int numElements);
-int printHeader(WordRec words[], int numElements);
+int printHeader(WordRec words[], int numElements, int staticWidth = 0);
 void printWordsWithCount(WordRec words[], int numElements);
 bool processChoice(char choice, WordRec words[], int numElements);
 void readSort(ifstream &wordFile, WordRec words[], int &numElements);
@@ -65,12 +68,19 @@ int main() {
     // prompt user for filename and open the file
     // exit if the file is not found
     if (!openFile(wordFile)) {
-        cout << "File failed to open." << endl;
+        cout << endl << "File failed to open." << endl;
         return 1;
     }
     
     // read until array is full or EOF. elements will be unique and sorted
     readSort(wordFile, words, numElements);
+    
+    // check if any words were read
+    if (numElements == 0) {
+        cout << endl << "No words were found in the file." << endl << endl;
+        return 1;
+    }
+    
     // if there is more to read, only process duplicates of existing members
     if (numElements == MAX_WORDS && !wordFile.fail())
         findDuplicates(wordFile, words, numElements);
@@ -122,6 +132,29 @@ int findLongestWord(WordRec words[], int numElements) {
         if (length < words[i].getWord().length())
             length = words[i].getWord().length();
     return length;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Function name:  getPositiveInput
+//  Description:    prompt the user for a positive number and pester them until
+//                  they enter one
+//  Parameters:     string prompt - prompt to display to the user
+//  Return Value:   int - the user's input
+//
+////////////////////////////////////////////////////////////////////////////////
+int getPositiveInput(string prompt) {
+    int input;
+    cout << prompt;
+    
+    while (!(cin >> input) || input <= 0) {
+        cout << "Please enter a positive number: ";
+        // clear the cin buffer (thanks stackoverflow)
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    }
+    
+    return input;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -194,16 +227,45 @@ void printAllWords(WordRec words[], int numElements) {
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  Function name:  printHeader
-//  Description:    prints the header for use with other output functions
+//  Function name:  printFirstChars
+//  Description:    prints all recorded words and how many times they appeared,
+//                  truncated to the number of characters specified by the user
 //  Parameters:     WordRec words[]: array of WordRec objects - input
 //                  int numElements: number of array elements - input
+//  Return Value:   none
+//
+////////////////////////////////////////////////////////////////////////////////
+void printFirstChars(WordRec words[], int numElements) {
+    int input = getPositiveInput("Number of characters to display: ");
+    
+    cout << "Showing the first " << input << " characters of each word" << endl;
+    int width = printHeader(words, numElements, input);
+    
+    for (int i = 0; i < numElements; i++)
+        cout << setw(width) << left << words[i].getWord().substr(0,input)
+             << ' ' << words[i].getCount() << endl;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Function name:  printHeader
+//  Description:    prints the header for use with other print functions
+//  Parameters:     WordRec words[]: array of WordRec objects - input
+//                  int numElements: number of array elements - input
+//                  int staticWidth: overrides dynamic width if positive. must
+//                      be between MIN_WIDTH and the longest word length - input
 //  Return Value:   int - width with which words should be printed
 //
 ////////////////////////////////////////////////////////////////////////////////
-int printHeader(WordRec words[], int numElements) {
+int printHeader(WordRec words[], int numElements, int staticWidth) {
+    int width; // width of word header
+    int longest = findLongestWord(words, numElements);
+    
     // dynamically determine width of the word header
-    int width = max(findLongestWord(words, numElements), 5);
+    if (staticWidth <= 0)
+        width = max(longest, MIN_WIDTH);
+    else if (staticWidth < MIN_WIDTH) width = MIN_WIDTH;
+    else width = min(staticWidth, longest);
     
     // print header
     cout << endl << setw(width+1) << left << "Word" << "Count" << endl;
@@ -225,17 +287,8 @@ int printHeader(WordRec words[], int numElements) {
 //
 ////////////////////////////////////////////////////////////////////////////////
 void printWordsWithCount(WordRec words[], int numElements) {
-    int input = 0;
+    int input = getPositiveInput("Enter the count you are looking for: ");
     WordRec matching[MAX_WORDS];
-    cout << "Enter the count you are looking for: ";
-    // check for valid input
-    //cin >> input;
-    while (!(cin >> input) || input <= 0) {
-        cout << "Please enter a positive number: ";
-        // clear the cin buffer (thanks stackoverflow)
-        cin.clear();
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-    }
     
     // find words
     int i, numWords = 0;
@@ -285,7 +338,7 @@ bool processChoice(char choice, WordRec words[], int numElements) {
             printWordsWithCount(words, numElements);
             break;
         case OPT_FIRST:
-            cout << "S)how first n chars of all words" << endl;
+            printFirstChars(words, numElements);
             break;
         case OPT_FIND:
             cout << "F)ind a word" << endl;
@@ -347,7 +400,6 @@ void readSort(ifstream &wordFile, WordRec words[], int &numElements) {
 //
 ////////////////////////////////////////////////////////////////////////////////
 void removeDuplicate(WordRec words[],int &spot,int &indexMin,int &numElements) {
-    // if positive, remove 
     //cout << "Duplicate: " << words[indexMin].getWord() << " " << words[spot-1].getWord() << endl;
     swap(words[indexMin], words[numElements-1]);
     words[spot-1]++;
@@ -378,8 +430,7 @@ int searchWords(WordRec words[], int numElements, string key) {
         if (words[midpoint] < key) min = midpoint + 1;
         else max = midpoint - 1;
     }
-    if (words[min] == key) return min;
-    else return -1;
+    return (words[min] == key) ? min : -1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
