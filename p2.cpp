@@ -12,7 +12,9 @@
 //    This program will read a file of words separated by whitespace and
 //    store them in a WordRec object array, where each object contains the word
 //    and the number of times it appears in the file. The array will be
-//    sorted by the lexographical order of the word.
+//    sorted by the lexographical order of the word. The user will be able to
+//    make various queries about the stored words, such as showing their counts,
+//    what words appeared N times, searching for a word, etc.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -26,7 +28,7 @@
 
 // Maximum number of tokens to store
 #define MAX_WORDS 100
-// Letters specifying menu options
+// Chars specifying menu options
 #define OPT_ALLWORDS 'A' // print all words
 #define OPT_COUNT 'P' // print words with specific count
 #define OPT_FIRST 'S' // print first chars of all words
@@ -38,10 +40,11 @@
 using namespace std;
 
 
-/********** PROTOTYPES **********/
+/**************** PROTOTYPES ****************/
 
 void findDuplicates(ifstream &wordFile, WordRec words[], int numElements);
 int findLongestWord(WordRec words[], int numElements);
+void findWord(WordRec words[], int numElements);
 int getPositiveInput(string prompt);
 char menuPrompt();
 bool openFile(ifstream &filestream);
@@ -136,8 +139,32 @@ int findLongestWord(WordRec words[], int numElements) {
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  Function name:  findWord
+//  Description:    prompts the user for a word and tell them if there is a
+//                  matching WordRec in the array
+//  Parameters:     WordRec words[]: array of WordRec objects - input
+//                  int numElements: number of array elements - input
+//  Return Value:   none
+//
+////////////////////////////////////////////////////////////////////////////////
+void findWord(WordRec words[], int numElements) {
+    string input;
+    cout << "Enter word to search for: ";
+    cin >> input;
+    
+    int index = searchWords(words, numElements, input);
+    cout << endl;
+    if (index > -1)
+        cout << "The word \"" << input << "\" was found "
+             << words[index].getCount() << " times.";
+    else cout << "The word \"" << input << "\" was not found in the file.";
+    cout << endl << endl;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  Function name:  getPositiveInput
-//  Description:    prompt the user for a positive number and pester them until
+//  Description:    prompts the user for a positive number and pester them until
 //                  they enter one
 //  Parameters:     string prompt - prompt to display to the user
 //  Return Value:   int - the user's input
@@ -173,14 +200,18 @@ char menuPrompt() {
     cout << endl
          << "Please choose an option:" << endl
          << "A)ll words with number of appearances" << endl
-         << "P)rint words with specific count" << endl
-         << "S)how first n chars of all words" << endl
+         << "P)rint words that appeared a specified number of times" << endl
+         << "S)how first N characters of all words" << endl
          << "F)ind a word" << endl
          << "Q)uit" << endl << "> ";
     
-    // use getline to retrieve first character and discard the rest
-    getline(cin, input);
-    choice = input[0];
+    cin >> choice;
+    
+    // clear the cin buffer (thanks stackoverflow)
+    // program acts weird without this
+    cin.clear();
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    
     return toupper(choice);
 }
 
@@ -341,7 +372,7 @@ bool processChoice(char choice, WordRec words[], int numElements) {
             printFirstChars(words, numElements);
             break;
         case OPT_FIND:
-            cout << "F)ind a word" << endl;
+            findWord(words, numElements);
             break;
         case OPT_QUIT:
             return false;
