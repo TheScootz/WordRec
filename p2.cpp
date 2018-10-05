@@ -25,6 +25,10 @@
 
 // Maximum number of tokens to store
 #define MAX_WORDS 100
+// Letters specifying menu options
+#define PRINT_ALL A // print all words
+#define PRINT_COUNT P // print words with specific count
+#define PRINT_FIRST 
 
 using namespace std;
 
@@ -36,6 +40,8 @@ int findLongestWord(WordRec words[], int numElements);
 char menuPrompt();
 bool openFile(ifstream &filestream);
 void printAllWords(WordRec words[], int numElements);
+void printHeader(WordRec words[], int numElements);
+void printWordsWithCount(WordRec words[], int numElements);
 bool processChoice(char choice, WordRec words[], int numElements);
 void readSort(ifstream &wordFile, WordRec words[], int &numElements);
 void removeDuplicate(WordRec words[], int &spot, int &indexMin, int &numElements);
@@ -159,8 +165,7 @@ bool openFile(ifstream &filestream) {
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  Function name:  printAllWords
-//  Description:    display all the recorded words and how many times they
-//                  appeared
+//  Description:    prints all recorded words and how many times they appeared
 //  Parameters:     WordRec words[]: array of WordRec objects - input
 //                  int numElements: number of array elements - input
 //  Return Value:   none
@@ -173,19 +178,57 @@ void printAllWords(WordRec words[], int numElements) {
         return;
     }
     
+    printHeader(words, numElements);
+    
+    for (int i = 0; i < numElements; i++)
+        cout << setw(width) << left << words[i] << endl;
+    cout << endl;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Function name:  printHeader
+//  Description:    prints the header for use with other output functions
+//  Parameters:     WordRec words[]: array of WordRec objects - input
+//                  int numElements: number of array elements - input
+//  Return Value:   int - width with which words should be printed
+//
+////////////////////////////////////////////////////////////////////////////////
+int printHeader(WordRec words[], int numElements) {
     // dynamically determine width of the word header
-    int width = max(findLongestWord(words, numElements)+1, 5);
+    int width = max(findLongestWord(words, numElements), 5);
     
     // print header
     cout << endl << setw(width+1) << left << "Word" << "Count" << endl;
     for (int i = 0; i < width; i++)
         cout << '-';
     cout << " -----" << endl;
-    
-    for (int i = 0; i < numElements; i++)
-        cout << setw(width) << left << words[i] << endl;
-    cout << endl;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Function name:  printWordsWithCount
+//  Description:    prints all words which have a specific count specified by
+//                  the user
+//  Parameters:     WordRec words[]: array of WordRec objects - input
+//                  int numElements: number of array elements - input
+//  Return Value:   none
+//
+////////////////////////////////////////////////////////////////////////////////
+void printWordsWithCount(WordRec words[], int numElements) {
+    int input;
+    WordRec matching[MAX_WORDS];
+    cout << "Enter the count you are looking for: ";
+    // check for valid input
+    while (!(cin >> input) && input <= 0)
+        cout << "Please enter a positive number: ";
+    
+    for (int i = 0, numWords = 0; i < numElements; i++) {
+        if (words[i].getCount() == input)
+            matching[numWords++] = words[i];
+    }
+}
+    
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -218,13 +261,12 @@ bool processChoice(char choice, WordRec words[], int numElements) {
             break;
         case 'Q':
             return false;
-        default: // prompt again
+        default:
             cout << "Invalid option chosen." << endl;
-            return processChoice(menuPrompt(), words, numElements);
     }
     
     return true;
-}
+}   
 
 ////////////////////////////////////////////////////////////////////////////////
 //
